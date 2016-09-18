@@ -42,7 +42,7 @@ $container = new class extends \Slim\Container {
             return '';
         }
         $keywords = $this->dbh->select_all(
-            'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
+            'SELECT * FROM entry ORDER BY keyword_length DESC'
         );
         $kw2sha = [];
 
