@@ -66,14 +66,11 @@ $container = new class extends \Slim\Container {
     }
 
     public function load_stars($keyword) {
-        $keyword = rawurlencode($keyword);
-        $origin = config('isutar_origin');
-        $url = "{$origin}/stars?keyword={$keyword}";
-        $ua = new \GuzzleHttp\Client;
-        $res = $ua->request('GET', $url)->getBody();
-        $data = json_decode($res, true);
+        $stars = $this->dbh->select_all(
+            'SELECT * FROM star WHERE keyword = ?'
+        , $keyword);
 
-        return $data['stars'];
+        return $stars;
     }
 };
 $container['view'] = function ($container) {
