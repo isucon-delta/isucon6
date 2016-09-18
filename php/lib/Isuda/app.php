@@ -192,10 +192,11 @@ $app->post('/register', function (Request $req, Response $c) {
 });
 
 function register($dbh, $user, $pass) {
+    $salt = random_string('....................');
     $dbh->query(
         'INSERT INTO user (name, salt, password, created_at)'
         .' VALUES (?, ?, ?, NOW())'
-    , $user, '', $pass);
+    , $user, $salt, sha1($salt . $pass));
 
     return $dbh->last_insert_id();
 }
@@ -209,16 +210,10 @@ $app->get('/login', function (Request $req, Response $c) {
 $app->post('/login', function (Request $req, Response $c) {
     $name = $req->getParsedBody()['name'];
     $row = $this->dbh->select_row(
-        'SELECT id, password FROM user'
+        'SELECT * FROM user'
         . ' WHERE name = ?'
     , $name);
-    if (!$row) {
-        return $c->withStatus(403);
-    }
-    if (
-        ($row['id'] > 577 && $row['password'] !== $req->getParsedBody()['password']) ||
-        ($row['id'] <= 577 && $name !== $req->getParsedBody()['password'])
-    ) {
+    if (!$row || $row['password'] !== sha1($row['salt'].$req->getParsedBody()['password'])) {
         return $c->withStatus(403);
     }
 
