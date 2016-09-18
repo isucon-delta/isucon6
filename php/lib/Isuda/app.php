@@ -40,10 +40,10 @@ $container = new class extends \Slim\Container {
         //$this->redis->connect('127.0.0.1', 6379);
     }
 
-    public function htmlify($content, $keywords) {
-        if (!isset($content)) {
-            return '';
-        }
+    public function get_keyword_replace_pairs(){
+        $keywords = $this->dbh->select_all(
+            'SELECT keyword FROM entry ORDER BY keyword_length DESC'
+        );
 
 	$rep =array();
 
@@ -51,7 +51,14 @@ $container = new class extends \Slim\Container {
             $rep[$keyword['keyword']] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($keyword['keyword']), html_escape($keyword['keyword']));
 	}
 
-	$content = strtr($content, $rep);
+	return $rep;
+    }
+
+    public function htmlify($content, $keywords_pairs) {
+        if (!isset($content)) {
+            return '';
+        }
+	$content = strtr($content, $keywords_pairs);
 	return nl2br($content, true);
 
 	/*
@@ -201,9 +208,7 @@ $app->get('/', function (Request $req, Response $c) {
         "OFFSET $offset"
     );
 
-    $keywords = $this->dbh->select_all(
-        'SELECT keyword FROM entry ORDER BY keyword_length DESC'
-    );
+    $keywords = $this->get_keyword_replace_pairs();
      foreach ($entries as &$entry) {
         $entry['html']  = $this->htmlify($entry['description'], $keywords);
         $entry['stars'] = $this->load_stars($entry['keyword']);
@@ -313,9 +318,8 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
     , $keyword);
     if (empty($entry)) return $c->withStatus(404);
 
-    $keywords = $this->dbh->select_all(
-        'SELECT keyword FROM entry ORDER BY keyword_length DESC'
-    );
+    $keywords = $this->get_keyword_replace_pairs();
+
     $entry['html'] = $this->htmlify($entry['description'], $keywords);
     $entry['stars'] = $this->load_stars($entry['keyword']);
 
