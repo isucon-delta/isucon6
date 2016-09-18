@@ -86,7 +86,7 @@ $container['stash'] = new \Pimple\Container;
 // set log config
 $container['logger'] = function($c) {
     $logger = new \Monolog\Logger('my_logger');
-        $file_handler = new \Monolog\Handler\StreamHandler("/tmp/app.log");
+        $file_handler = new \Monolog\Handler\StreamHandler("logs/app.log");
         $logger->pushHandler($file_handler);
     return $logger;
 };
