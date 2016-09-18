@@ -194,10 +194,10 @@ $app->post('/keyword', function (Request $req, Response $c) {
     }
     $this->dbh->query(
         'INSERT INTO entry (author_id, keyword, keyword_length, description, created_at, updated_at)'
-        .' VALUES (?, ?, ?, ?, NOW(), NOW())'
+        .' VALUES (?, ?, CHARACTER_LENGTH(?), ?, NOW(), NOW())'
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
-    , $user_id, $keyword, strlen($keyword), $description, $user_id, $keyword, $description);
+    , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
