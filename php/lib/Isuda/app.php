@@ -112,13 +112,7 @@ $app->get('/initialize', function (Request $req, Response $c) {
         'DELETE FROM entry WHERE id > 7101'
     );
 
-    //$entries = $this->dbh->select_all(
-    //    'SELECT keyword, keyword_length FROM entry'
-    //);
-
-    //foreach ($entries as &$entry) {
-    //    $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
-    //}
+    $this->redis->flushAll();
 
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
