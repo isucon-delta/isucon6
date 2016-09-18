@@ -120,15 +120,13 @@ $app->get('/initialize', function (Request $req, Response $c) {
         'DELETE FROM entry WHERE id > 7101'
     );
 
-    $this->redis->flushAll();
+    //$entries = $this->dbh->select_all(
+    //    'SELECT keyword, keyword_length FROM entry'
+    //);
 
-    $entries = $this->dbh->select_all(
-        'SELECT keyword, keyword_length FROM entry'
-    );
-
-    foreach ($entries as &$entry) {
-        $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
-    }
+    //foreach ($entries as &$entry) {
+    //    $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
+    //}
 
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
@@ -215,7 +213,7 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
     , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
-    $this->redis->zAdd('keywords' , strlen($keyword), $keyword);
+    //$this->redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
