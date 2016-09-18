@@ -6,6 +6,7 @@ use Slim\Http\Response;
 use PDO;
 use PDOWrapper;
 
+
 function config($key) {
     static $conf;
     if ($conf === null) {
@@ -25,7 +26,7 @@ function config($key) {
 }
 
 $container = new class extends \Slim\Container {
-    public $dbh;
+    public $dbh,$redis;
     public function __construct() {
         parent::__construct();
 
@@ -35,6 +36,8 @@ $container = new class extends \Slim\Container {
             $_ENV['ISUDA_DB_PASSWORD'] ?? 'isucon',
             [ PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4" ]
         ));
+        //$this->redis = new \Redis();
+        //$this->redis->connect('127.0.0.1', 6379);
     }
 
     public function htmlify($content, $keywords) {
@@ -50,12 +53,28 @@ $container = new class extends \Slim\Container {
 
 	$content = strtr($content, $rep);
 	return nl2br($content, true);
+
 	/*
+        //$redis_flag = true;
+        //$keywords = $this->redis->zRangeByScore('keywords', 0, 200);
+        //if (empty($keywords)) {
+        //    $keywords = $this->dbh->select_all(
+        //       'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
+        //    );
+        //    $redis_flag = false;
+        //    foreach ($keywords as &$keyword) {
+        //        $this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+        //    }
+        //}
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
         for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
-            $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
+            if ($redis_flag) {
+                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword); }, $kwtmp));
+            } else {
+                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
+            }
             preg_replace_callback("/($re)/", function ($m) use (&$kw2sha) {
                 $kw = $m[1];
                 return $kw2sha[$kw] = "isuda_" . sha1($kw);
@@ -125,6 +144,15 @@ $app->get('/initialize', function (Request $req, Response $c) {
     $this->dbh->query(
         'DELETE FROM entry WHERE id > 7101'
     );
+
+    //$entries = $this->dbh->select_all(
+    //    'SELECT keyword, keyword_length FROM entry'
+    //);
+
+    //foreach ($entries as &$entry) {
+    //    $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
+    //}
+
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
         'result' => 'ok',
@@ -212,6 +240,7 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
     , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
+    //$this->redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
