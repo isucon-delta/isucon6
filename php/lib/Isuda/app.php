@@ -26,7 +26,8 @@ function config($key) {
 }
 
 $container = new class extends \Slim\Container {
-    public $dbh,$redis;
+    public $dbh;
+    public $redis;
     public function __construct() {
         parent::__construct();
 
@@ -36,8 +37,8 @@ $container = new class extends \Slim\Container {
             $_ENV['ISUDA_DB_PASSWORD'] ?? 'isucon',
             [ PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4" ]
         ));
-        //$this->redis = new \Redis();
-        //$this->redis->connect('127.0.0.1', 6379);
+        $this->redis = new \Redis();
+        $this->redis->connect('127.0.0.1', 6379);
     }
 
     public function get_keyword_replace_pairs(){
@@ -146,6 +147,12 @@ $mw['authenticate'] = function ($req, $c, $next) {
     }
     return $next($req, $c);
 };
+
+$app->get('/redis', function (Request $req, Response $c) {
+    return render_json($c, [
+        'result' => $this->redis->ping(),
+    ]);
+});
 
 $app->get('/initialize', function (Request $req, Response $c) {
     $this->dbh->query(
