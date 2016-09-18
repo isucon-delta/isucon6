@@ -161,7 +161,7 @@ $app->get('/', function (Request $req, Response $c) {
     );
 
     $keywords = $this->dbh->select_all(
-        'SELECT * FROM entry ORDER BY keyword_length DESC'
+        'SELECT keyword FROM entry ORDER BY keyword_length DESC'
     );
      foreach ($entries as &$entry) {
         $entry['html']  = $this->htmlify($entry['description'], $keywords);
@@ -272,7 +272,7 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
     if (empty($entry)) return $c->withStatus(404);
 
     $keywords = $this->dbh->select_all(
-        'SELECT * FROM entry ORDER BY keyword_length DESC'
+        'SELECT keyword FROM entry ORDER BY keyword_length DESC'
     );
     $entry['html'] = $this->htmlify($entry['description'], $keywords);
     $entry['stars'] = $this->load_stars($entry['keyword']);
