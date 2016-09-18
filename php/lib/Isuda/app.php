@@ -60,46 +60,7 @@ $container = new class extends \Slim\Container {
         }
 	$content = strtr($content, $keywords_pairs);
 	return nl2br($content, true);
-
-	/*
-        //$redis_flag = true;
-        //$keywords = $this->redis->zRangeByScore('keywords', 0, 200);
-        //if (empty($keywords)) {
-        //    $keywords = $this->dbh->select_all(
-        //       'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
-        //    );
-        //    $redis_flag = false;
-        //    foreach ($keywords as &$keyword) {
-        //        $this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
-        //    }
-        //}
-        $kw2sha = [];
-
-        // NOTE: avoid pcre limitation "regular expression is too large at offset"
-        for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
-            if ($redis_flag) {
-                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword); }, $kwtmp));
-            } else {
-                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
-            }
-            preg_replace_callback("/($re)/", function ($m) use (&$kw2sha) {
-                $kw = $m[1];
-                return $kw2sha[$kw] = "isuda_" . sha1($kw);
-            }, $content);
-        }
-
-        $content = strtr($content, $kw2sha);
-        $content = html_escape($content);
-        foreach ($kw2sha as $kw => $hash) {
-            $url = '/keyword/' . rawurlencode($kw);
-            $link = sprintf('<a href="%s">%s</a>', $url, html_escape($kw));
-
-            $content = preg_replace("/{$hash}/", $link, $content);
-        }
-
-        return nl2br($content, true);
-	 */
-    }
+   }
 
     public function load_stars($keyword) {
         $stars = $this->dbh->select_all(
