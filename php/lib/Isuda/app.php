@@ -42,17 +42,18 @@ $container = new class extends \Slim\Container {
     }
 
     public function get_keyword_replace_pairs(){
-        $keywords = $this->dbh->select_all(
-            'SELECT keyword FROM entry ORDER BY keyword_length DESC'
-        );
+        $keys = $this->redis-> zRevRange('keywords', 0, -1);
+        //$keywords = $this->dbh->select_all(
+        //    'SELECT keyword FROM entry ORDER BY keyword_length DESC'
+        //);
 
-	$rep =array();
+        $rep =array();
 
-	foreach ($keywords as $keyword){
-            $rep[$keyword['keyword']] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($keyword['keyword']), html_escape($keyword['keyword']));
-	}
+        foreach ($keys as $key){
+            $rep[$key] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($key), html_escape($key));
+        }
 
-	return $rep;
+        return $rep;
     }
 
     public function htmlify($content, $keywords_pairs) {
@@ -206,7 +207,7 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
     , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
-    //$this->redis->zAdd('keywords' , strlen($keyword), $keyword);
+    $this->redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
