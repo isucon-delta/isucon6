@@ -82,7 +82,19 @@ $container['view'] = function ($container) {
     return $view;
 };
 $container['stash'] = new \Pimple\Container;
+
+// set log config
+$container['logger'] = function($c) {
+    $logger = new \Monolog\Logger('my_logger');
+        $file_handler = new \Monolog\Handler\StreamHandler("/tmp/app.log");
+        $logger->pushHandler($file_handler);
+    return $logger;
+};
+
+
 $app = new \Slim\App($container);
+
+
 
 $mw = [];
 // compatible filter 'set_name'
@@ -147,6 +159,7 @@ $app->post('/stars', function (Request $req, Response $c) {
 });
 
 $app->get('/', function (Request $req, Response $c) {
+
     $PER_PAGE = 10;
     $page = $req->getQueryParams()['page'] ?? 1;
 
@@ -294,6 +307,9 @@ function is_spam_contents($content) {
         'form_params' => ['content' => $content]
     ])->getBody();
     $data = json_decode($res, true);
+    if (!$data['valid']) {
+    	$this->logger->addInfo("spam content `$content`");
+    }
     return !$data['valid'];
 }
 
