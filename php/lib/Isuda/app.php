@@ -7,9 +7,6 @@ use PDO;
 use PDOWrapper;
 
 
-$redis = new \Redis(); 
-$redis->connect('127.0.0.1', 6379);
-
 function config($key) {
     static $conf;
     if ($conf === null) {
@@ -30,6 +27,7 @@ function config($key) {
 
 $container = new class extends \Slim\Container {
     public $dbh;
+    public $redis;
     public function __construct() {
         parent::__construct();
 
@@ -39,33 +37,36 @@ $container = new class extends \Slim\Container {
             $_ENV['ISUDA_DB_PASSWORD'] ?? 'isucon',
             [ PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4" ]
         ));
+        $this->redis = new \Redis(); 
+        $this->redis->connect('127.0.0.1', 6379);
+
     }
 
     public function htmlify($content, $keywords) {
         if (!isset($content)) {
             return '';
-		}
+        }
 
-		$redis_flag = true;
-		$keywords = $redis->zRangeByScore('keywords', 0, 200);
-		if (empty($keywords)) {
+        $redis_flag = true;
+        $keywords = $redis->zRangeByScore('keywords', 0, 200);
+        if (empty($keywords)) {
             $keywords = $this->dbh->select_all(
                'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
             );
-		    $redis_flag = false;
-			foreach ($keywords as &$keyword) {
-				//	$redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
-			}
-		}
+            $redis_flag = false;
+            foreach ($keywords as &$keyword) {
+                //	$this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+            }
+        }
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
-		for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
-			if ($redis_flag) {
-				$re = implode('|', array_map(function ($keyword) { return quotemeta($keyword); }, $kwtmp));
-			} else {
-				$re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
-			}
+        for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
+            if ($redis_flag) {
+                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword); }, $kwtmp));
+            } else {
+                $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
+            }
             preg_replace_callback("/($re)/", function ($m) use (&$kw2sha) {
                 $kw = $m[1];
                 return $kw2sha[$kw] = "isuda_" . sha1($kw);
@@ -133,13 +134,13 @@ $app->get('/initialize', function (Request $req, Response $c) {
         'DELETE FROM entry WHERE id > 7101'
     );
 
-  //  $entries = $this->dbh->select_all(
-  //      'SELECT * FROM entry'
-  //  );
+    $entries = $this->dbh->select_all(
+        'SELECT keyword, keyword_length FROM entry'
+    );
 
-   // foreach ($entries as &$entry) {
-//	    $redis->zAdd('keywords' , strlen($entry['keyword']), $entry['keyword']);
-  //  }
+    foreach ($entries as &$entry) {
+        $redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
+    }
 
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
@@ -227,8 +228,8 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' VALUES (?, ?, CHARACTER_LENGTH(?), ?, NOW(), NOW())'
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
-    , $user_id, $keyword, strlen($keyword), $description, $user_id, $keyword, $description);
-    //$redis->zAdd('keywords' , strlen($keyword), $keyword);
+    , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
+    $this->redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
