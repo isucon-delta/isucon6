@@ -198,6 +198,7 @@ $app->post('/keyword', function (Request $req, Response $c) {
     $description = $req->getParsedBody()['description'];
 
     if (is_spam_contents($description) || is_spam_contents($keyword)) {
+    	$this->logger->addInfo("spam content `$description`, `$keyword`");
         return $c->withStatus(400)->write('SPAM!');
     }
     $this->dbh->query(
@@ -307,9 +308,6 @@ function is_spam_contents($content) {
         'form_params' => ['content' => $content]
     ])->getBody();
     $data = json_decode($res, true);
-    if (!$data['valid']) {
-    	$this->logger->addInfo("spam content `$content`");
-    }
     return !$data['valid'];
 }
 
