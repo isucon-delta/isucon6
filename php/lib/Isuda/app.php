@@ -68,10 +68,7 @@ $container = new class extends \Slim\Container {
    }
 
     public function load_stars($keyword) {
-        $stars = $this->dbh->select_all(
-            'SELECT user_name FROM star WHERE keyword = ?'
-        , $keyword);
-
+        $stars = $this->redis->lRange("star:$keyword", 0, -1);
         return $stars;
     }
 };
@@ -132,15 +129,15 @@ $app->get('/initialize', function (Request $req, Response $c) {
     ]);
 });
 
-$app->get('/stars', function (Request $req, Response $c) {
-    $stars = $this->dbh->select_all(
-        'SELECT * FROM star WHERE keyword = ?'
-    , $req->getParams()['keyword']);
-
-    return render_json($c, [
-        'stars' => $stars,
-    ]);
-});
+//$app->get('/stars', function (Request $req, Response $c) {
+//    $stars = $this->dbh->select_all(
+//        'SELECT * FROM star WHERE keyword = ?'
+//    , $req->getParams()['keyword']);
+//
+//    return render_json($c, [
+//        'stars' => $stars,
+//    ]);
+//});
 
 $app->post('/stars', function (Request $req, Response $c) {
     $keyword = $req->getParams()['keyword'];
@@ -153,11 +150,8 @@ $app->post('/stars', function (Request $req, Response $c) {
         if (empty($entry)) return $c->withStatus(404);
 	}
 
-    $this->dbh->query(
-        'INSERT INTO star (keyword, user_name, created_at) VALUES (?, ?, NOW())',
-        $keyword,
-        $req->getParams()['user']
-    );
+    $this->redis->rpush("star:$keyword", $req->getParams()['user']);
+
     return render_json($c, [
         'result' => 'ok',
     ]);
