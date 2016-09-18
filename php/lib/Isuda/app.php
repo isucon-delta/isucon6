@@ -37,13 +37,10 @@ $container = new class extends \Slim\Container {
         ));
     }
 
-    public function htmlify($content) {
+    public function htmlify($content, $keywords) {
         if (!isset($content)) {
             return '';
         }
-        $keywords = $this->dbh->select_all(
-            'SELECT * FROM entry ORDER BY keyword_length DESC'
-        );
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
@@ -162,8 +159,12 @@ $app->get('/', function (Request $req, Response $c) {
         "LIMIT $PER_PAGE ".
         "OFFSET $offset"
     );
-    foreach ($entries as &$entry) {
-        $entry['html']  = $this->htmlify($entry['description']);
+
+    $keywords = $this->dbh->select_all(
+        'SELECT * FROM entry ORDER BY keyword_length DESC'
+    );
+     foreach ($entries as &$entry) {
+        $entry['html']  = $this->htmlify($entry['description'], $keywords);
         $entry['stars'] = $this->load_stars($entry['keyword']);
     }
     unset($entry);
@@ -269,7 +270,11 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
         .' WHERE keyword = ?'
     , $keyword);
     if (empty($entry)) return $c->withStatus(404);
-    $entry['html'] = $this->htmlify($entry['description']);
+
+    $keywords = $this->dbh->select_all(
+        'SELECT * FROM entry ORDER BY keyword_length DESC'
+    );
+    $entry['html'] = $this->htmlify($entry['description'], $keywords);
     $entry['stars'] = $this->load_stars($entry['keyword']);
 
     return $this->view->render($c, 'keyword.twig', [
