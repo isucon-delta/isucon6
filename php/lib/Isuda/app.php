@@ -26,8 +26,7 @@ function config($key) {
 }
 
 $container = new class extends \Slim\Container {
-    public $dbh;
-    public $redis;
+    public $dbh,$redis;
     public function __construct() {
         parent::__construct();
 
@@ -39,7 +38,6 @@ $container = new class extends \Slim\Container {
         ));
         $this->redis = new \Redis(); 
         $this->redis->connect('127.0.0.1', 6379);
-
     }
 
     public function htmlify($content, $keywords) {
@@ -47,17 +45,17 @@ $container = new class extends \Slim\Container {
             return '';
         }
 
-        $redis_flag = true;
-        $keywords = $redis->zRangeByScore('keywords', 0, 200);
-        if (empty($keywords)) {
+		$redis_flag = true;
+		$keywords = $this->redis->zRangeByScore('keywords', 0, 200);
+		if (empty($keywords)) {
             $keywords = $this->dbh->select_all(
                'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
             );
-            $redis_flag = false;
-            foreach ($keywords as &$keyword) {
-                //	$this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
-            }
-        }
+		    $redis_flag = false;
+			foreach ($keywords as &$keyword) {
+				$this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+			}
+		}
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
