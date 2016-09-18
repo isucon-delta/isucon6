@@ -86,8 +86,9 @@ $container['stash'] = new \Pimple\Container;
 // set log config
 $container['logger'] = function($c) {
     $logger = new \Monolog\Logger('my_logger');
-        $file_handler = new \Monolog\Handler\StreamHandler("logs/app.log");
-        $logger->pushHandler($file_handler);
+    $file_handler = new \Monolog\Handler\StreamHandler("logs/app.log");
+    $logger->pushHandler($file_handler);
+
     return $logger;
 };
 
@@ -197,9 +198,8 @@ $app->post('/keyword', function (Request $req, Response $c) {
     $user_id = $this->get('stash')['user_id'];
     $description = $req->getParsedBody()['description'];
 
-    if (is_spam_contents($description) || is_spam_contents($keyword)) {
-  //  	$this->logger->addInfo("spam content `$description`, `$keyword`");
-	error_log("spam content `$description`, `$keyword`");
+    if (is_spam_contents($description .' '. $keyword)) {
+	error_log("spam content `$description` `$keyword`");
         return $c->withStatus(400)->write('SPAM!');
     }
     $this->dbh->query(
