@@ -36,8 +36,8 @@ $container = new class extends \Slim\Container {
             $_ENV['ISUDA_DB_PASSWORD'] ?? 'isucon',
             [ PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4" ]
         ));
-        $this->redis = new \Redis(); 
-        $this->redis->connect('127.0.0.1', 6379);
+        //$this->redis = new \Redis();
+        //$this->redis->connect('127.0.0.1', 6379);
     }
 
     public function htmlify($content, $keywords) {
@@ -45,17 +45,17 @@ $container = new class extends \Slim\Container {
             return '';
         }
 
-		$redis_flag = true;
-		$keywords = $this->redis->zRangeByScore('keywords', 0, 200);
-		if (empty($keywords)) {
-            $keywords = $this->dbh->select_all(
-               'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
-            );
-		    $redis_flag = false;
-			foreach ($keywords as &$keyword) {
-				$this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
-			}
-		}
+        //$redis_flag = true;
+        //$keywords = $this->redis->zRangeByScore('keywords', 0, 200);
+        //if (empty($keywords)) {
+        //    $keywords = $this->dbh->select_all(
+        //       'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
+        //    );
+        //    $redis_flag = false;
+        //    foreach ($keywords as &$keyword) {
+        //        $this->redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+        //    }
+        //}
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
@@ -132,12 +132,12 @@ $app->get('/initialize', function (Request $req, Response $c) {
         'DELETE FROM entry WHERE id > 7101'
     );
 
-    $entries = $this->dbh->select_all(
-        'SELECT keyword, keyword_length FROM entry'
-    );
+    //$entries = $this->dbh->select_all(
+    //    'SELECT keyword, keyword_length FROM entry'
+    //);
 
-//    foreach ($entries as &$entry) {
-  //      $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
+    //foreach ($entries as &$entry) {
+    //    $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
     //}
 
     $this->dbh->query('TRUNCATE star');
@@ -227,7 +227,7 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
     , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
-    $this->redis->zAdd('keywords' , strlen($keyword), $keyword);
+    //$this->redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
