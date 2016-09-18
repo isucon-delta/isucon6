@@ -114,6 +114,13 @@ $app->get('/initialize', function (Request $req, Response $c) {
 
     $this->redis->flushAll();
 
+    $entries = $this->dbh->select_all(
+        'SELECT keyword, keyword_length from entry'
+    );
+    foreach ($entries as &$entry) {
+        $this->redis->zAdd('keywords', $entry['keyword_length'], $entry['keyword']);
+    }
+
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
         'result' => 'ok',
