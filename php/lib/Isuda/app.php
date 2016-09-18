@@ -42,16 +42,19 @@ $container = new class extends \Slim\Container {
     }
 
     public function get_keyword_replace_pairs(){
-        $keys = $this->redis-> zRevRange('keywords', 0, -1);
+        $keywords = $this->redis-> zRevRange('keywords', 0, -1);
         //$keywords = $this->dbh->select_all(
         //    'SELECT keyword FROM entry ORDER BY keyword_length DESC'
         //);
 
         $rep =array();
 
-        foreach ($keys as $key){
-            $rep[$key] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($key), html_escape($key));
-        }
+	foreach ($keywords as $keyword){
+		$rep[$keyword] = sprintf('<a href="/keyword/%s">%s</a>',
+			rawurlencode($keyword),
+			htmlspecialchars($keyword, ENT_COMPAT | ENT_HTML401, 'UTF-8')
+		);
+	}
 
         return $rep;
     }
