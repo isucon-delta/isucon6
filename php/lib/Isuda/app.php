@@ -121,11 +121,11 @@ $app->get('/initialize', function (Request $req, Response $c) {
     $this->redis->flushAll();
 
     $entries = $this->dbh->select_all(
-        'SELECT keyword, keyword_length from entry'
+        'SELECT description, keyword, keyword_length,  from entry'
     );
     foreach ($entries as &$entry) {
         $this->redis->zAdd('keywords', $entry['keyword_length'], $entry['keyword']);
-        $this->redis->set($entry['keyword'], 1);
+        $this->redis->set($entry['keyword'], $entry['description']);
     }
 
     $this->dbh->query('TRUNCATE star');
@@ -294,11 +294,17 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
     $keyword = $req->getAttribute('keyword');
     if ($keyword === null) return $c->withStatus(400);
 
-    $entry = $this->dbh->select_row(
-        'SELECT description, keyword FROM entry'
-        .' WHERE keyword = ?'
-    , $keyword);
-    if (empty($entry)) return $c->withStatus(404);
+    $entry = array();
+    if (empty($this->redis->get($keyword))) {
+        $entry = $this->dbh->select_row(
+            'SELECT description, keyword FROM entry'
+           .' WHERE keyword = ?'
+           , $keyword);
+        if (empty($entry)) return $c->withStatus(404);
+	} else {
+        $entry['keyword'] = $keyword; 
+        $entry['description'] = $this->redis->get($keyword);
+	}
 
     $keywords = $this->get_keyword_replace_pairs();
 
