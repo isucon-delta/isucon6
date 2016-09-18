@@ -42,7 +42,7 @@ $container = new class extends \Slim\Container {
             return '';
         }
         $keywords = $this->dbh->select_all(
-            'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
+            'SELECT * FROM entry ORDER BY keyword_length DESC'
         );
         $kw2sha = [];
 
@@ -203,11 +203,11 @@ $app->post('/keyword', function (Request $req, Response $c) {
         return $c->withStatus(400)->write('SPAM!');
     }
     $this->dbh->query(
-        'INSERT INTO entry (author_id, keyword, description, created_at, updated_at)'
-        .' VALUES (?, ?, ?, NOW(), NOW())'
+        'INSERT INTO entry (author_id, keyword, keyword_length, description, created_at, updated_at)'
+        .' VALUES (?, ?, ?, ?, NOW(), NOW())'
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
-    , $user_id, $keyword, $description, $user_id, $keyword, $description);
+    , $user_id, $keyword, strlen($keyword), $description, $user_id, $keyword, $description);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
