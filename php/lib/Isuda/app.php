@@ -64,7 +64,7 @@ $container = new class extends \Slim\Container {
 
     public function load_stars($keyword) {
         $stars = $this->dbh->select_all(
-            'SELECT * FROM star WHERE keyword = ?'
+            'SELECT user_name FROM star WHERE keyword = ?'
         , $keyword);
 
         return $stars;
