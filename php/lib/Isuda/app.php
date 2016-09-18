@@ -145,7 +145,7 @@ $app->post('/stars', function (Request $req, Response $c) {
     $keyword = $req->getParams()['keyword'];
 
     $entry = $this->dbh->select_row(
-        'SELECT * FROM entry'
+        'SELECT id FROM entry'
         .' WHERE keyword = ?'
     , $keyword);
     if (empty($entry)) return $c->withStatus(404);
@@ -167,7 +167,7 @@ $app->get('/', function (Request $req, Response $c) {
 
     $offset = $PER_PAGE * ($page-1);
     $entries = $this->dbh->select_all(
-        'SELECT * FROM entry '.
+        'SELECT description, keyword FROM entry '.
         'ORDER BY updated_at DESC '.
         "LIMIT $PER_PAGE ".
         "OFFSET $offset"
@@ -276,7 +276,7 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
     if ($keyword === null) return $c->withStatus(400);
 
     $entry = $this->dbh->select_row(
-        'SELECT * FROM entry'
+        'SELECT description, keyword FROM entry'
         .' WHERE keyword = ?'
     , $keyword);
     if (empty($entry)) return $c->withStatus(404);
