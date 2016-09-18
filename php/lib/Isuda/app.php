@@ -49,7 +49,10 @@ $container = new class extends \Slim\Container {
 	$rep =array();
 
 	foreach ($keywords as $keyword){
-            $rep[$keyword['keyword']] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($keyword['keyword']), html_escape($keyword['keyword']));
+		$rep[$keyword['keyword']] = sprintf('<a href="/keyword/%s">%s</a>',
+			rawurlencode($keyword['keyword']),
+			htmlspecialchars($keyword['keyword'], ENT_COMPAT | ENT_HTML401, 'UTF-8')
+		);
 	}
 
 	return $rep;
