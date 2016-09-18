@@ -123,6 +123,7 @@ $app->get('/initialize', function (Request $req, Response $c) {
     );
     foreach ($entries as &$entry) {
         $this->redis->zAdd('keywords', $entry['keyword_length'], $entry['keyword']);
+        $this->redis->set($entry['keyword'], 1);
     }
 
     $this->dbh->query('TRUNCATE star');
@@ -144,11 +145,13 @@ $app->get('/stars', function (Request $req, Response $c) {
 $app->post('/stars', function (Request $req, Response $c) {
     $keyword = $req->getParams()['keyword'];
 
-    $entry = $this->dbh->select_row(
-        'SELECT id FROM entry'
-        .' WHERE keyword = ?'
-    , $keyword);
-    if (empty($entry)) return $c->withStatus(404);
+    if (empty($this->redis->get($keyword))) {
+        $entry = $this->dbh->select_row(
+           'SELECT id FROM entry'
+            .' WHERE keyword = ?'
+          , $keyword);
+        if (empty($entry)) return $c->withStatus(404);
+	}
 
     $this->dbh->query(
         'INSERT INTO star (keyword, user_name, created_at) VALUES (?, ?, NOW())',
