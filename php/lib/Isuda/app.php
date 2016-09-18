@@ -311,10 +311,10 @@ $app->get('/keyword/{keyword}', function (Request $req, Response $c) {
 })->add($mw['set_name']);
 
 $app->post('/keyword/{keyword}', function (Request $req, Response $c) {
-    $keyword = $req->getParsedBody()['keyword'];
-    if ($keyword === null) return $c->withStatus(400);
-    $delete = $req->getParsedBody()['delete'];
-    if ($delete === null) return $c->withStatus(400);
+    $param = $req->getParsedBody();
+    $keyword = $param['keyword'];
+    $delete = $param['delete'];
+    if ($keyword === null || $delete == null) return $c->withStatus(400);
 
     $entry = $this->dbh->select_row(
         'SELECT * FROM entry'
