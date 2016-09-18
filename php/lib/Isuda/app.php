@@ -317,8 +317,7 @@ function is_spam_contents($content) {
     $res = $ua->request('POST', config('isupam_origin'), [
         'form_params' => ['content' => $content]
     ])->getBody();
-    $data = json_decode($res, true);
-    return !$data['valid'];
+    return $res != '{"valid":true}';
 }
 
 $app->run();
