@@ -6,6 +6,10 @@ use Slim\Http\Response;
 use PDO;
 use PDOWrapper;
 
+
+$redis = new \Redis(); 
+$redis->connect('127.0.0.1', 6379);
+
 function config($key) {
     static $conf;
     if ($conf === null) {
@@ -40,12 +44,28 @@ $container = new class extends \Slim\Container {
     public function htmlify($content, $keywords) {
         if (!isset($content)) {
             return '';
-        }
+		}
+
+		$redis_flag = true;
+		$keywords = $redis->zRangeByScore('keywords', 0, 200);
+		if (empty($keywords)) {
+            $keywords = $this->dbh->select_all(
+               'SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'
+            );
+		    $redis_flag = false;
+			foreach ($keywords as &$keyword) {
+				//	$redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+			}
+		}
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
-        for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
-            $re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
+		for ($i = 0; !empty($kwtmp = array_slice($keywords, 500 * $i, 500)); $i++) {
+			if ($redis_flag) {
+				$re = implode('|', array_map(function ($keyword) { return quotemeta($keyword); }, $kwtmp));
+			} else {
+				$re = implode('|', array_map(function ($keyword) { return quotemeta($keyword['keyword']); }, $kwtmp));
+			}
             preg_replace_callback("/($re)/", function ($m) use (&$kw2sha) {
                 $kw = $m[1];
                 return $kw2sha[$kw] = "isuda_" . sha1($kw);
@@ -112,6 +132,15 @@ $app->get('/initialize', function (Request $req, Response $c) {
     $this->dbh->query(
         'DELETE FROM entry WHERE id > 7101'
     );
+
+  //  $entries = $this->dbh->select_all(
+  //      'SELECT * FROM entry'
+  //  );
+
+   // foreach ($entries as &$entry) {
+//	    $redis->zAdd('keywords' , strlen($entry['keyword']), $entry['keyword']);
+  //  }
+
     $this->dbh->query('TRUNCATE star');
     return render_json($c, [
         'result' => 'ok',
@@ -198,7 +227,8 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' VALUES (?, ?, CHARACTER_LENGTH(?), ?, NOW(), NOW())'
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
-    , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
+    , $user_id, $keyword, strlen($keyword), $description, $user_id, $keyword, $description);
+    //$redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
