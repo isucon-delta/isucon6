@@ -41,6 +41,16 @@ $container = new class extends \Slim\Container {
         if (!isset($content)) {
             return '';
         }
+
+	$rep =array();
+
+	foreach ($keywords as $keyword){
+            $rep[$keyword['keyword']] = sprintf('<a href="/keyword/%s">%s</a>', rawurlencode($keyword['keyword']), html_escape($keyword['keyword']));
+	}
+
+	$content = strtr($content, $rep);
+	return nl2br($content, true);
+	/*
         $kw2sha = [];
 
         // NOTE: avoid pcre limitation "regular expression is too large at offset"
@@ -51,6 +61,7 @@ $container = new class extends \Slim\Container {
                 return $kw2sha[$kw] = "isuda_" . sha1($kw);
             }, $content);
         }
+
         $content = strtr($content, $kw2sha);
         $content = html_escape($content);
         foreach ($kw2sha as $kw => $hash) {
@@ -59,7 +70,9 @@ $container = new class extends \Slim\Container {
 
             $content = preg_replace("/{$hash}/", $link, $content);
         }
+
         return nl2br($content, true);
+	 */
     }
 
     public function load_stars($keyword) {
