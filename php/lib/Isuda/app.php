@@ -89,22 +89,8 @@ $app = new \Slim\App($container);
 $mw = [];
 // compatible filter 'set_name'
 $mw['set_name'] = function ($req, $c, $next) {
-
-        $this->get('stash')['user_id'] = $_SESSION['user_id'];
-        $this->get('stash')['user_name'] = $_SESSION['user_name'];
-
-    /*
-    $user_id = $_SESSION['user_id'] ?? null;
-    if (isset($user_id)) {
-        $this->get('stash')['user_id'] = $user_id;
-        $this->get('stash')['user_name'] = $this->dbh->select_one(
-            'SELECT name FROM user WHERE id = ?'
-            , $user_id);
-        if (!isset($this->get('stash')['user_name'])) {
-            return $c->withStatus(403);
-        }
-    }
-     */
+    $this->get('stash')['user_id'] = $_SESSION['user_id'];
+    $this->get('stash')['user_name'] = $_SESSION['user_name'];
     return $next($req, $c);
 };
 
