@@ -6,7 +6,8 @@ use Slim\Http\Response;
 use PDO;
 use PDOWrapper;
 
-$redis = new Redis();
+
+$redis = new \Redis(); 
 $redis->connect('127.0.0.1', 6379);
 
 function config($key) {
@@ -53,7 +54,7 @@ $container = new class extends \Slim\Container {
             );
 		    $redis_flag = false;
 			foreach ($keywords as &$keyword) {
-					$redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
+				//	$redis->zAdd('keywords' , strlen($keyword['keyword']), $keyword['keyword']);
 			}
 		}
         $kw2sha = [];
@@ -226,8 +227,8 @@ $app->post('/keyword', function (Request $req, Response $c) {
         .' VALUES (?, ?, CHARACTER_LENGTH(?), ?, NOW(), NOW())'
         .' ON DUPLICATE KEY UPDATE'
         .' author_id = ?, keyword = ?, description = ?, updated_at = NOW()'
-    , $user_id, $keyword, $keyword, $description, $user_id, $keyword, $description);
-    $redis->zAdd('keywords' , strlen($keyword), $keyword);
+    , $user_id, $keyword, strlen($keyword), $description, $user_id, $keyword, $description);
+    //$redis->zAdd('keywords' , strlen($keyword), $keyword);
 
     return $c->withRedirect('/');
 })->add($mw['authenticate'])->add($mw['set_name']);
