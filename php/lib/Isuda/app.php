@@ -137,7 +137,7 @@ $app->get('/initialize', function (Request $req, Response $c) {
     );
 
     foreach ($entries as &$entry) {
-        $redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
+        $this->redis->zAdd('keywords' , entry['keyword_length']), $entry['keyword']);
     }
 
     $this->dbh->query('TRUNCATE star');
