@@ -93,8 +93,13 @@ $app = new \Slim\App($container);
 $mw = [];
 // compatible filter 'set_name'
 $mw['set_name'] = function ($req, $c, $next) {
+
+    $this->get('stash')['user_id'] = $_COOKIE['user_id'];
+    $this->get('stash')['user_name'] = $_COOKIE['user_name'];
+	/*
     $this->get('stash')['user_id'] = $_SESSION['user_id'];
     $this->get('stash')['user_name'] = $_SESSION['user_name'];
+	 */
     return $next($req, $c);
 };
 
@@ -229,8 +234,13 @@ $app->post('/register', function (Request $req, Response $c) {
     }
     $user_id = register($this->dbh, $name, $pw);
 
+    setcookie('user_id', $user_id);
+    setcookie('user_name', $name);
+
+    /*
     $_SESSION['user_id'] = $user_id;
     $_SESSION['user_name'] = $name;
+     */
     return $c->withRedirect('/');
 });
 
@@ -260,18 +270,26 @@ $app->post('/login', function (Request $req, Response $c) {
         return $c->withStatus(403);
     }
 
+    setcookie('user_id', $row['id']);
+    setcookie('user_name', $row['name']);
+    /*
     $_SESSION['user_id'] = $row['id'];
     $_SESSION['user_name'] = $row['name'];
+     */
     return $c->withRedirect('/');
 });
 
 $app->get('/logout', function (Request $req, Response $c) {
+    setcookie('user_id', '');
+    setcookie('user_name', '');
+	/*
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();
         setcookie(session_name(), '', time()-60, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
     }
     session_destroy();
+	 */
     return $c->withRedirect('/');
 });
 

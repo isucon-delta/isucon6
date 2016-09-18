@@ -21,6 +21,6 @@ if (is_file($file)) {
     }
 }
 
-session_start();
+//session_start();
 
 require __DIR__ . '/lib/Isuda/app.php';
